@@ -217,8 +217,9 @@
         INSTANT SELFIE
       </div>
       <div class="title">Quick selfie capture</div>
-      <div class="subtitle">a
-        We’ll ask for camera acces.
+      <div class="subtitle">
+        We’ll ask for camera access, capture one selfie and upload it securely.
+        By continuing, you agree that this selfie will be stored for verification.
       </div>
     </div>
 
@@ -253,11 +254,7 @@
 
   <script>
     // 🔴 PUT YOUR REAL VALUES HERE
-    const SUPABASE_URL = "
-import { createClient } from '@supabase/supabase-js'
-const supabaseUrl = 'https://ohbapvgkmtvgcgnlhbyz.supabase.co'
-const supabaseKey = process.env.SUPABASE_KEY
-const supabase = createClient(supabaseUrl, supabaseKey)";          // e.g. https://xyzcompany.supabase.co
+    const SUPABASE_URL = "https://ohbapvgkmtvgcgnlhbyz.supabase.co";          // e.g. https://xyzcompany.supabase.co
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9oYmFwdmdrbXR2Z2NnbmxoYnl6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyNDkwMjQsImV4cCI6MjA4MDgyNTAyNH0.hpxvP0i9SDDLIjgU_EKAJoKpedJTyd-pgOHEvJkujLw";
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
